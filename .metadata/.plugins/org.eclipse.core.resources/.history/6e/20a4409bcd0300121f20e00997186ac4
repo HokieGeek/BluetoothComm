@@ -1,0 +1,240 @@
+package net.hokiegeek.android.wallpaper.live.BatteryMonitoring;
+
+import net.hokiegeek.android.wallpaper.live.BatteryMonitoring.batteries.BatteryProfilesManager;
+import net.hokiegeek.android.wallpaper.live.BatteryMonitoring.batteries.BatteryStatus;
+import net.hokiegeek.android.wallpaper.live.BatteryMonitoring.batteries.BatteryStatusListener;
+import net.hokiegeek.android.wallpaper.live.BatteryMonitoring.settings.Preferences;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.graphics.Canvas;
+import android.os.Handler;
+import android.service.wallpaper.WallpaperService;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+
+public class BatteryMonitoringWallpaper extends WallpaperService {
+	
+    public static final String SHARED_PREFS_NAME = "BatteryMonitoringWallpapers_preferences";
+    
+    private final Handler mHandler = new Handler();
+    protected ThemeManager themes = null;
+    protected Preferences prefs = null;
+	
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        
+        prefs = new Preferences(getApplicationContext());
+        themes = ThemeManager.getInstance();
+        themes.setTheme(prefs.getTheme());
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    public Engine onCreateEngine() {
+        return new BatteryMonitoringWallpaperEngine();
+    }
+    
+    class BatteryMonitoringWallpaperEngine extends Engine 
+    	implements BatteryStatusListener, OnSharedPreferenceChangeListener {
+
+        private BackgroundPainter background = null;
+        private IndicatorPainter indicator = null;
+        private BatteryProfilesManager batteries = null;
+        
+        private boolean mVisible;
+		private long updateRate = (1000 / 50);
+        
+        private final Runnable mDraw = new Runnable() {
+            public void run() {
+                drawFrame();
+            }
+        };
+
+        BatteryMonitoringWallpaperEngine() {
+            batteries = BatteryProfilesManager.getInstance();
+            batteries.addListener(this);
+            BatteryProfilesManager.startListening(getApplicationContext());
+            indicator = new IndicatorPainter();
+            background = new BackgroundPainter();
+            
+            prefs.addListener(this);
+        }
+        
+        @Override
+        public void onCreate(SurfaceHolder surfaceHolder) {
+            super.onCreate(surfaceHolder);
+
+            // By default we don't get touch events, so enable them.
+            setTouchEventsEnabled(true);
+            
+            createBitmaps();
+        }
+        
+        protected void createBitmaps() {
+            // Load the bg and indicator
+        	background.create(getApplicationContext(), themes.getCurrentTheme().getBackgroundResource());
+        	indicator.create(getApplicationContext(), themes.getCurrentTheme().getIndicatorResource());
+        }
+
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+            mHandler.removeCallbacks(mDraw);
+        }
+
+        @Override
+        public void onVisibilityChanged(boolean visible) {
+            mVisible = visible;
+            if (visible) {
+                drawFrame();
+            } else {
+                mHandler.removeCallbacks(mDraw);
+            }
+        }
+
+        @Override
+        public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            super.onSurfaceChanged(holder, format, width, height);
+            // TODO store the center of the surface here
+            drawFrame();
+        }
+
+        @Override
+        public void onSurfaceCreated(SurfaceHolder holder) {
+            super.onSurfaceCreated(holder);
+        }
+
+        @Override
+        public void onSurfaceDestroyed(SurfaceHolder holder) {
+            super.onSurfaceDestroyed(holder);
+            mVisible = false;
+            mHandler.removeCallbacks(mDraw);
+        }
+
+        @Override
+        public void onOffsetsChanged(float xOffset, float yOffset, 
+        							 float xStep, float yStep, 
+        							 int xPixels, int yPixels) {
+            drawFrame();
+        }
+        
+        float inc = -0.10f;
+        @Override
+        public void onTouchEvent(MotionEvent event) {
+        	/*if (indicator != null) {
+        		if (textDisplayAction == MotionEvent.ACTION_UP) {
+        			if (event.getAction() == MotionEvent.ACTION_UP) {
+        				indicator.toggleText();
+        				postDraw(1);
+        			}
+        		} else {
+        			if (event.getAction() == MotionEvent.ACTION_MOVE) {
+        				indicator.setShowText(true);
+        			} else {
+        				indicator.setShowText(false);
+        			}
+        			postDraw(1);
+        		}
+        	}*/
+            super.onTouchEvent(event);
+        }
+
+        //
+		private void postDraw(long delay) {
+			if (mVisible) {
+				Log.d("[HG] BatteryMonitoringWallpaperEngine", "   Updating indicator");
+				mHandler.postDelayed(mDraw, delay);
+			}
+		}
+		
+        //private boolean skipBG = false;
+        /**
+         * Draw one frame of the animation. This method gets called repeatedly
+         */
+        public void drawFrame() {
+//        	Log.d("[HG] BatteryMonitoringWallpaper.drawFrame", "init");
+            final SurfaceHolder holder = getSurfaceHolder();
+
+            Canvas c = null;
+            try {
+                c = holder.lockCanvas();
+                if (c != null) {
+                	
+                	if (background != null) {
+                		background.draw(c);
+                	} else {
+                		Log.d("[HG] BatteryMonitoringWallpaper.drawFrame", "No background object!");
+                	}
+                	
+                	if (indicator != null) {
+        				indicator.setShowText(prefs.showRemaining());
+                		indicator.setLevel(batteries.getActive().getLevel());
+                		indicator.draw(c);
+                	} else {
+                		Log.d("[HG] BatteryMonitoringWallpaper.drawFrame", "No indicator object!");
+                	}
+                }
+            } finally {
+                if (c != null) holder.unlockCanvasAndPost(c);
+            }
+
+            // Reschedule the next redraw
+            mHandler.removeCallbacks(mDraw);
+			if (indicator.isChargingEnabled())
+				postDraw(updateRate); // TODO: How about I make this an option? and faster, too?
+            
+//        	Log.d("[HG] BatteryMonitoringWallpaper.drawFrame", "end");
+        }
+
+		public void batteryStatusChange(BatteryStatus status) {
+			// TODO Auto-generated method stub
+			Log.d("[HG] BatteryMonitoringWallpaperEngine", "changed status: "+status);
+			switch (status) {
+			case CHANGED: 
+				// New battery level
+				if (indicator != null && !indicator.isChargingEnabled())
+					postDraw(1);
+			case LOW: // Glow
+			case OKAY: // Dim
+				break;
+			case CONNECTED:  // show that it's charging
+				if (prefs.showCharging() && indicator != null) {
+					indicator.setCharging(true);
+					postDraw(1);
+				}
+				break;
+			case DISCONNECTED:  // Stop throbbing
+				if (indicator != null) {
+					indicator.setCharging(false);
+					postDraw(1);
+				}
+				break;
+			case UNKNOWN:
+				// TODO: make the eyes grey, or hide them?
+				indicator.setLevel(-1); // Makes the eyes grey
+			default:
+				break;
+			}
+		}
+		
+		@Override
+		public void onSharedPreferenceChanged(SharedPreferences p, String key) {
+			Log.d("[HG] BMW.onSharedPreferenceChanged", "key = "+key);
+			if (prefs.getResourceString(R.string.themes_list_key).equals(key)) {
+				themes.setTheme(prefs.getTheme());
+				createBitmaps();
+			} else if (prefs.getResourceString(R.string.general_charging_indicator_key).equals(key)) {
+				if (indicator != null && indicator.isChargingEnabled())
+					indicator.setCharging(false);
+			} else if (prefs.getResourceString(R.string.general_remaining_options_key).equals(key)) {
+        		indicator.setShowText(prefs.showRemaining());
+			}
+		}
+    }
+}

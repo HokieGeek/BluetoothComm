@@ -1,0 +1,5 @@
+INDEX VERSION 1.126+/home/andres/Dropbox/coding/android/BluetoothTest/.metadata/.plugins/org.eclipse.jdt.core
+3153846450.index
+2036746975.index
+4147173030.index
+3674109852.index
