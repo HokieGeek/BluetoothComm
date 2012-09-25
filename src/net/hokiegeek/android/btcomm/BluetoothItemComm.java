@@ -10,12 +10,18 @@ import android.app.Activity;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.Window;
+import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 	
 public class BluetoothItemComm extends Activity {
 	private BluetoothItem item = null;
-	private TextView text = null;
+	private TextView log = null;
 	// private BluetoothSocket socket = null;
 	private BluetoothSocketListener listener = null;
 	
@@ -53,15 +59,42 @@ public class BluetoothItemComm extends Activity {
         	}
         }
         
-        text = (TextView) findViewById(R.id.log);
+        log = (TextView) findViewById(R.id.log);
         Log.d("[HG] BluetoothComm", "Created view");
-        text.setText("Paired: '"+(item.isPaired() ? "Yes" : "No")+"'");
+        log.setText("Paired: '"+(item.isPaired() ? "Yes" : "No")+"'");
+        
+        EditText message = (EditText) findViewById(R.id.sendText);
+        message.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        		public boolean onEditorAction(TextView view, int actionId, KeyEvent event) {
+        			// If the action is a key-up event on the return key, send the message
+        			if (actionId == EditorInfo.IME_NULL && event.getAction() == KeyEvent.ACTION_UP) {
+        				String message = view.getText().toString();
+        				view.setText("");
+        				Log.d("[HG] BluetoothComm", "Writing to socket");
+                        listener.write(message);
+        			}
+        			return true;
+        		}
+        	}
+        );
+        
+        Button sendButton = (Button) findViewById(R.id.sendBtn);
+        sendButton.setOnClickListener(new OnClickListener() {
+            public void onClick(View v) {
+                // Send a message using content of the edit text widget
+                EditText view = (EditText) findViewById(R.id.sendText);
+                String message = view.getText().toString();
+                view.setText("");
+                Log.d("[HG] BluetoothComm", "Writing to socket");
+                listener.write(message);
+            }
+        });
+        
+        
         
         Log.d("[HG] BluetoothComm", "About to create socket");
-        listener = new BluetoothSocketListener(item, text);
+        listener = new BluetoothSocketListener(item, log);
         Log.d("[HG] BluetoothComm", "About to start the thread");
         listener.start();
-        // Log.d("[HG] BluetoothComm", "Writing to socket");
-        // listener.write("FOOBAR");
     }
 }

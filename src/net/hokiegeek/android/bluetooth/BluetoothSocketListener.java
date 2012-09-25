@@ -3,10 +3,8 @@ package net.hokiegeek.android.bluetooth;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 import android.widget.TextView;
@@ -69,7 +67,7 @@ public class BluetoothSocketListener extends Thread {
 	}
 	
 	public void write(String msg) {
-		Log.d("[HG] BluetoothComm", "Converting String to bytes");
+		Log.d("[HG] BluetoothComm", "Converting String to bytes: "+msg);
 		write(msg.getBytes());
 	}
 	
