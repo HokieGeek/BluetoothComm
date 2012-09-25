@@ -4,6 +4,7 @@
     <string name="no_devices">No devices found</string>
     <string name="bt_not_on">Bluetooth modem is turned off</string>
     <string name="bt_device_item_title">Bluetooth Device Name</string>
+    <string name="comm_send_button">Send</string>
     
     <color name="titletextcolor">#FFFFFF</color>
 </resources>

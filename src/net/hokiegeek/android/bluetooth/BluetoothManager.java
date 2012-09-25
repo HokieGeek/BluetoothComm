@@ -53,6 +53,7 @@ public class BluetoothManager {
     	listeners = new ArrayList<BluetoothManagerListener>();
     	devices = new ArrayList<BluetoothItem>();
     	bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    	me = this;
     	
     	start();
     }
@@ -81,14 +82,14 @@ public class BluetoothManager {
             	refreshDevices();
             	// TODO: put it on a timer
         	} else {
-        		Log.e("[HG] BluetoothManager()", "BT device is not on");
+        		Log.e("[HG] BluetoothComm", "BT device is not on");
             	// If BT is not on, request that it be enabled
         		// TODO
         		// Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         		// context.startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         	}
         } else {
-        	Log.e("[HG] BluetoothManager()", "No BT device available");
+        	Log.e("[HG] BluetoothComm", "No BT device available");
         }
         
         return true;
@@ -124,7 +125,7 @@ public class BluetoothManager {
      * @param l
      */
     public void addListener(BluetoothManagerListener l) {
-    	Log.d("[HG] addListener", "Adding a listener");
+    	Log.v("[HG] BluetoothComm", "BluetoothManager: Adding a listener");
     	listeners.add(l);
     }
     
@@ -142,7 +143,7 @@ public class BluetoothManager {
      * @param item
      */
     private void fireDeviceEvent(DeviceEventType event, BluetoothItem item) {
-    	Log.d("[HG] fireDeviceEvent", "Alerting "+listeners.size()+" listeners");
+    	Log.v("[HG] BluetoothComm", "fireDeviceEvent: Alerting "+listeners.size()+" listeners");
     	for (BluetoothManagerListener l : listeners) {
     		switch (event) {
     		case CREATE: l.deviceAdded(item); break;
@@ -164,7 +165,7 @@ public class BluetoothManager {
     	devices.add(item);
     	fireDeviceEvent(DeviceEventType.CREATE, item);
     	
-    	Log.d("[HG] addDevice", "Adding a new BT device");
+    	Log.d("[HG] BluetoothComm", "BluetoothManager: Adding a new BT device: "+item.getId());
     }
     
     /**
@@ -199,7 +200,9 @@ public class BluetoothManager {
      * @return
      */
     public BluetoothItem getDevice(int id) {
+    	Log.d("[HG] BluetoothComm", "Have '"+devices.size()+"' devices");
     	for (BluetoothItem item : devices) {
+    		Log.d("[HG] BluetoothComm", "Looking for item '"+id+"': "+item.getId());
     		if (item.getId() == id) {
     			return item;
     		}

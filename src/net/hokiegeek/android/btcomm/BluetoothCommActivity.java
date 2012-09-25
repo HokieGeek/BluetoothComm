@@ -14,6 +14,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
@@ -35,7 +36,15 @@ public class BluetoothCommActivity extends Activity implements BluetoothManagerL
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		// TODO: indeterminate thingy while in discovery
+		// requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+		getWindow().requestFeature(Window.FEATURE_PROGRESS);
+		
+		
 		setContentView(R.layout.main);
+		
+		setProgressBarIndeterminateVisibility(true);
  
 		// Create the view and add the adapter
 		devices = new ArrayList<BluetoothItem>();
@@ -74,8 +83,6 @@ public class BluetoothCommActivity extends Activity implements BluetoothManagerL
 		Toast.makeText(getApplicationContext(),
 				  "Found device: " + item.getName(), Toast.LENGTH_LONG)
 			   .show();
-		
-		Log.d("[HG] deviceAdded", "Received device added");
 		
 		devices.add(item);
 		dataAdapter.notifyDataSetChanged();

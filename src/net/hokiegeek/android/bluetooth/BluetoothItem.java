@@ -13,9 +13,7 @@ import android.bluetooth.BluetoothSocket;
  * @author andres
  *
  */
-public class BluetoothItem {
-	private static final UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-	
+public class BluetoothItem {	
 	private BluetoothDevice device;
 	private int id;
 	private boolean paired;
@@ -83,7 +81,7 @@ public class BluetoothItem {
 	 * 
 	 * @return
 	 */
-	public BluetoothSocket createSPPSocket() throws IOException {
-		return device.createRfcommSocketToServiceRecord(SPP_UUID);
+	public BluetoothSocket createSocket(UUID uuid) throws IOException {
+		return device.createRfcommSocketToServiceRecord(uuid);
 	}
 }
