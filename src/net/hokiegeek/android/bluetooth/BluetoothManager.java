@@ -39,10 +39,11 @@ public class BluetoothManager {
                 // Get the BluetoothDevice object from the Intent
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // If it's already paired, skip it, because it's been listed already
-                if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+                /*if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
                 	// TODO: flip some flag that states that it was found during discovery
                 	addDevice(device, false);
-                }
+                }*/
+                addDevice(device, (device.getBondState() == BluetoothDevice.BOND_BONDED));
             //} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
             }
         }
@@ -96,7 +97,7 @@ public class BluetoothManager {
     }
     
     private void refreshDevices() {
-    	refreshPairedDevices();
+    	// refreshPairedDevices();
     	initDiscovery();
     }
 
